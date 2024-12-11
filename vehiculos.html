@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Gestión de Vehículos</title>
+    <a href="index.html"><button class="volver-btn" onclick="window.history.back()">Volver</button></a>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="number"], input[type="tel"], input[type="file"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 250px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Vehículos</h1>
+    
+    <!-- Formulario para agregar/editar vehículo -->
+    <form id="formVehiculo">
+        <h3>Agregar Vehículo</h3>
+        Marca: <input type="text" id="marca" required><br>
+        Modelo: <input type="text" id="modelo" required><br>
+        Estado: 
+        <select id="estado" required>
+            <option value="disponible">Disponible</option>
+            <option value="alquilado">Alquilado</option>
+        </select><br>
+        Número de Asientos: <input type="number" id="numeroAsiento" required><br>
+        Foto: <input type="file" id="foto" accept="image/*"><br>
+        Placa: <input type="text" id="placa" required><br>
+        <input type="submit" value="Agregar/Actualizar">
+    </form>
+    
+    <h3>Vehículos Registrados</h3>
+    <table id="vehiculosTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Estado</th>
+                <th>Asientos</th>
+                <th>Foto</th>
+                <th>Placa</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos de los vehículos se mostrarán aquí -->
+        </tbody>
+    </table>
+
+    <script>
+        // Obtención de elementos
+        const formVehiculo = document.getElementById('formVehiculo');
+        const marcaInput = document.getElementById('marca');
+        const modeloInput = document.getElementById('modelo');
+        const estadoInput = document.getElementById('estado');
+        const numeroAsientoInput = document.getElementById('numeroAsiento');
+        const fotoInput = document.getElementById('foto');
+        const placaInput = document.getElementById('placa');
+        const vehiculosTable = document.getElementById('vehiculosTable').getElementsByTagName('tbody')[0];
+
+        // Variable para saber si estamos editando
+        let vehiculoEditandoIndex = null;
+
+        // Función para cargar los vehículos desde localStorage
+        function cargarVehiculos() {
+            const vehiculos = JSON.parse(localStorage.getItem('vehiculos')) || [];
+            vehiculosTable.innerHTML = ''; // Limpiar la tabla antes de volver a renderizar
+            vehiculos.forEach((vehiculo, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${vehiculo.id}</td>
+                    <td>${vehiculo.marca}</td>
+                    <td>${vehiculo.modelo}</td>
+                    <td>${vehiculo.estado}</td>
+                    <td>${vehiculo.numeroAsiento}</td>
+                    <td><img src="${vehiculo.foto}" alt="Foto" width="50"></td>
+                    <td>${vehiculo.placa}</td>
+                    <td>
+                        <button onclick="editarVehiculo(${index})">Editar</button>
+                        <button onclick="eliminarVehiculo(${index})">Eliminar</button>
+                    </td>
+                `;
+                vehiculosTable.appendChild(row);
+            });
+        }
+
+        // Función para agregar o editar un vehículo
+        formVehiculo.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const marca = marcaInput.value;
+            const modelo = modeloInput.value;
+            const estado = estadoInput.value;
+            const numeroAsiento = numeroAsientoInput.value;
+            const foto = fotoInput.files[0] ? URL.createObjectURL(fotoInput.files[0]) : '';
+            const placa = placaInput.value;
+            
+            const vehiculos = JSON.parse(localStorage.getItem('vehiculos')) || [];
+
+            if (vehiculoEditandoIndex === null) {
+                // Agregar un nuevo vehículo
+                const nuevoVehiculo = {
+                    id: vehiculos.length + 1,
+                    marca: marca,
+                    modelo: modelo,
+                    estado: estado,
+                    numeroAsiento: numeroAsiento,
+                    foto: foto,
+                    placa: placa
+                };
+                vehiculos.push(nuevoVehiculo);
+            } else {
+                // Actualizar el vehículo
+                vehiculos[vehiculoEditandoIndex] = {
+                    id: vehiculos[vehiculoEditandoIndex].id,
+                    marca: marca,
+                    modelo: modelo,
+                    estado: estado,
+                    numeroAsiento: numeroAsiento,
+                    foto: foto,
+                    placa: placa
+                };
+                vehiculoEditandoIndex = null; // Resetear el índice de edición
+            }
+
+            localStorage.setItem('vehiculos', JSON.stringify(vehiculos));
+
+            // Limpiar los campos del formulario
+            marcaInput.value = '';
+            modeloInput.value = '';
+            estadoInput.value = 'disponible';
+            numeroAsientoInput.value = '';
+            fotoInput.value = '';
+            placaInput.value = '';
+
+            cargarVehiculos();
+        });
+
+        // Función para editar un vehículo
+        function editarVehiculo(index) {
+            const vehiculos = JSON.parse(localStorage.getItem('vehiculos')) || [];
+            const vehiculo = vehiculos[index];
+            
+            marcaInput.value = vehiculo.marca;
+            modeloInput.value = vehiculo.modelo;
+            estadoInput.value = vehiculo.estado;
+            numeroAsientoInput.value = vehiculo.numeroAsiento;
+            placaInput.value = vehiculo.placa;
+
+            // Se debe tratar la imagen si se desea mantenerla en la edición
+            vehiculoEditandoIndex = index; // Guardamos el índice del vehículo que estamos editando
+        }
+
+        // Función para eliminar un vehículo
+        function eliminarVehiculo(index) {
+            if (confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
+                const vehiculos = JSON.parse(localStorage.getItem('vehiculos')) || [];
+                vehiculos.splice(index, 1);
+                localStorage.setItem('vehiculos', JSON.stringify(vehiculos));
+                cargarVehiculos();
+            }
+        }
+
+        // Cargar los vehículos cuando la página se carga
+        cargarVehiculos();
+    </script>
+</body>
+</html>

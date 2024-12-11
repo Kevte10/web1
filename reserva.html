@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Gestión de Reservas</title>
+    <a href="index.html"><button class="volver-btn" onclick="window.history.back()">Volver</button></a>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="date"], input[type="number"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 250px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Reservas</h1>
+    
+    <!-- Formulario para agregar/editar reserva -->
+    <form id="formReserva">
+        <h3>Agregar/Editar Reserva</h3>
+        ID Cliente: <input type="number" id="idCliente" required><br>
+        ID Vehículo: <input type="number" id="idVehiculo" required><br>
+        Fecha Reserva: <input type="date" id="fechaReserva" required><br>
+        Fecha Alquiler: <input type="date" id="fechaAlquiler" required><br>
+        Estado:
+        <select id="estado" required>
+            <option value="pendiente">Pendiente</option>
+            <option value="confirmada">Confirmada</option>
+        </select><br>
+        <input type="submit" value="Agregar/Actualizar">
+    </form>
+    
+    <h3>Reservas Registradas</h3>
+    <table id="reservasTable">
+        <thead>
+            <tr>
+                <th>ID Reserva</th>
+                <th>ID Cliente</th>
+                <th>ID Vehículo</th>
+                <th>Fecha Reserva</th>
+                <th>Fecha Alquiler</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos de las reservas se mostrarán aquí -->
+        </tbody>
+    </table>
+
+    <script>
+        // Obtención de elementos
+        const formReserva = document.getElementById('formReserva');
+        const idClienteInput = document.getElementById('idCliente');
+        const idVehiculoInput = document.getElementById('idVehiculo');
+        const fechaReservaInput = document.getElementById('fechaReserva');
+        const fechaAlquilerInput = document.getElementById('fechaAlquiler');
+        const estadoInput = document.getElementById('estado');
+        const reservasTable = document.getElementById('reservasTable').getElementsByTagName('tbody')[0];
+
+        // Variable para saber si estamos editando
+        let reservaEditandoIndex = null;
+
+        // Función para cargar las reservas desde localStorage
+        function cargarReservas() {
+            const reservas = JSON.parse(localStorage.getItem('reservas')) || [];
+            reservasTable.innerHTML = ''; // Limpiar la tabla antes de volver a renderizar
+            reservas.forEach((reserva, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${reserva.idReserva}</td>
+                    <td>${reserva.idCliente}</td>
+                    <td>${reserva.idVehiculo}</td>
+                    <td>${reserva.fechaReserva}</td>
+                    <td>${reserva.fechaAlquiler}</td>
+                    <td>${reserva.estado}</td>
+                    <td>
+                        <button onclick="editarReserva(${index})">Editar</button>
+                        <button onclick="eliminarReserva(${index})">Eliminar</button>
+                    </td>
+                `;
+                reservasTable.appendChild(row);
+            });
+        }
+
+        // Función para agregar o editar una reserva
+        formReserva.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const idCliente = idClienteInput.value;
+            const idVehiculo = idVehiculoInput.value;
+            const fechaReserva = fechaReservaInput.value;
+            const fechaAlquiler = fechaAlquilerInput.value;
+            const estado = estadoInput.value;
+            
+            const reservas = JSON.parse(localStorage.getItem('reservas')) || [];
+
+            if (reservaEditandoIndex === null) {
+                // Agregar una nueva reserva
+                const nuevaReserva = {
+                    idReserva: reservas.length + 1,
+                    idCliente: idCliente,
+                    idVehiculo: idVehiculo,
+                    fechaReserva: fechaReserva,
+                    fechaAlquiler: fechaAlquiler,
+                    estado: estado
+                };
+                reservas.push(nuevaReserva);
+            } else {
+                // Actualizar la reserva
+                reservas[reservaEditandoIndex] = {
+                    idReserva: reservas[reservaEditandoIndex].idReserva,
+                    idCliente: idCliente,
+                    idVehiculo: idVehiculo,
+                    fechaReserva: fechaReserva,
+                    fechaAlquiler: fechaAlquiler,
+                    estado: estado
+                };
+                reservaEditandoIndex = null; // Resetear el índice de edición
+            }
+
+            localStorage.setItem('reservas', JSON.stringify(reservas));
+
+            // Limpiar los campos del formulario
+            idClienteInput.value = '';
+            idVehiculoInput.value = '';
+            fechaReservaInput.value = '';
+            fechaAlquilerInput.value = '';
+            estadoInput.value = 'pendiente';
+
+            cargarReservas();
+        });
+
+        // Función para editar una reserva
+        function editarReserva(index) {
+            const reservas = JSON.parse(localStorage.getItem('reservas')) || [];
+            const reserva = reservas[index];
+            
+            idClienteInput.value = reserva.idCliente;
+            idVehiculoInput.value = reserva.idVehiculo;
+            fechaReservaInput.value = reserva.fechaReserva;
+            fechaAlquilerInput.value = reserva.fechaAlquiler;
+            estadoInput.value = reserva.estado;
+
+            reservaEditandoIndex = index; // Guardamos el índice de la reserva que estamos editando
+        }
+
+        // Función para eliminar una reserva
+        function eliminarReserva(index) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta reserva?')) {
+                const reservas = JSON.parse(localStorage.getItem('reservas')) || [];
+                reservas.splice(index, 1);
+                localStorage.setItem('reservas', JSON.stringify(reservas));
+                cargarReservas();
+            }
+        }
+
+        // Cargar las reservas cuando la página se carga
+        cargarReservas();
+    </script>
+</body>
+</html>
