@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Gestión de Clientes</title>
+    <a href="main.html"><button class="volver-btn" onclick="window.history.back()">Volver</button></a>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="tel"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 250px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Clientes</h1>
+    
+    <!-- Formulario para agregar cliente -->
+    <form id="formCliente">
+        <h3>Agregar Cliente</h3>
+        Nombre: <input type="text" id="nombre" required><br>
+        Teléfono: <input type="tel" id="telefono" required pattern="[0-9]{9}"><br>
+        DNI: <input type="text" id="dni" required pattern="[0-9]{8}"><br>
+        Dirección: <input type="text" id="direccion" required><br>
+        <input type="submit" value="Agregar">
+    </form>
+    
+    <h3>Clientes Registrados</h3>
+    <table id="clientesTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>DNI</th>
+                <th>Dirección</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos de los clientes se mostrarán aquí -->
+        </tbody>
+    </table>
+
+    <script>
+        // Obtención de elementos
+        const formCliente = document.getElementById('formCliente');
+        const nombreInput = document.getElementById('nombre');
+        const telefonoInput = document.getElementById('telefono');
+        const dniInput = document.getElementById('dni');
+        const direccionInput = document.getElementById('direccion');
+        const clientesTable = document.getElementById('clientesTable').getElementsByTagName('tbody')[0];
+
+        // Variable para saber si estamos editando
+        let clienteEditandoIndex = null;
+
+        // Función para cargar los clientes desde localStorage
+        function cargarClientes() {
+            const clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+            clientesTable.innerHTML = ''; // Limpiar la tabla antes de volver a renderizar
+            clientes.forEach((cliente, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${cliente.id}</td>
+                    <td>${cliente.nombre}</td>
+                    <td>${cliente.telefono}</td>
+                    <td>${cliente.dni}</td>
+                    <td>${cliente.direccion}</td>
+                    <td>
+                        <button onclick="editarCliente(${index})">Editar</button>
+                        <button onclick="eliminarCliente(${index})">Eliminar</button>
+                    </td>
+                `;
+                clientesTable.appendChild(row);
+            });
+        }
+
+        // Función para agregar o editar un cliente
+        formCliente.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const nombre = nombreInput.value;
+            const telefono = telefonoInput.value;
+            const dni = dniInput.value;
+            const direccion = direccionInput.value;
+            
+            const clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+
+            if (clienteEditandoIndex === null) {
+                // Agregar un nuevo cliente
+                const nuevoCliente = {
+                    id: clientes.length + 1,  // Asignar un ID único basado en la longitud actual
+                    nombre: nombre,
+                    telefono: telefono,
+                    dni: dni,
+                    direccion: direccion
+                };
+                clientes.push(nuevoCliente);
+            } else {
+                // Actualizar el cliente
+                clientes[clienteEditandoIndex] = {
+                    id: clientes[clienteEditandoIndex].id, // Mantener el mismo ID
+                    nombre: nombre,
+                    telefono: telefono,
+                    dni: dni,
+                    direccion: direccion
+                };
+                clienteEditandoIndex = null; // Resetear el índice de edición
+            }
+
+            localStorage.setItem('clientes', JSON.stringify(clientes));
+
+            // Limpiar los campos del formulario
+            nombreInput.value = '';
+            telefonoInput.value = '';
+            dniInput.value = '';
+            direccionInput.value = '';
+
+            cargarClientes();
+        });
+
+        // Función para editar un cliente
+        function editarCliente(index) {
+            const clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+            const cliente = clientes[index];
+            
+            nombreInput.value = cliente.nombre;
+            telefonoInput.value = cliente.telefono;
+            dniInput.value = cliente.dni;
+            direccionInput.value = cliente.direccion;
+
+            clienteEditandoIndex = index; // Guardamos el índice del cliente que estamos editando
+        }
+
+        // Función para eliminar un cliente
+        function eliminarCliente(index) {
+            if (confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
+                const clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+                clientes.splice(index, 1);
+                localStorage.setItem('clientes', JSON.stringify(clientes));
+                cargarClientes();
+            }
+        }
+
+        // Cargar los clientes cuando la página se carga
+        cargarClientes();
+    </script>
+</body>
+</html>

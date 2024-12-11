@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Gestión de Empleados</title>
+    <a href="main.html"><button class="volver-btn" onclick="window.history.back()">Volver</button></a>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 250px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Empleados</h1>
+    
+    <!-- Formulario para agregar/editar empleado -->
+    <form id="formEmpleado">
+        <h3>Agregar/Editar Empleado</h3>
+        Nombre: <input type="text" id="nombre" required><br>
+        Contraseña: <input type="password" id="contraseña" required><br>
+        <input type="submit" value="Agregar/Actualizar">
+    </form>
+    
+    <h3>Empleados Registrados</h3>
+    <table id="empleadosTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Contraseña</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos de los empleados se mostrarán aquí -->
+        </tbody>
+    </table>
+
+    <script>
+        // Obtención de elementos
+        const formEmpleado = document.getElementById('formEmpleado');
+        const nombreInput = document.getElementById('nombre');
+        const contraseñaInput = document.getElementById('contraseña');
+        const empleadosTable = document.getElementById('empleadosTable').getElementsByTagName('tbody')[0];
+
+        // Variable para saber si estamos editando
+        let empleadoEditandoIndex = null;
+
+        // Función para cargar los empleados desde localStorage
+        function cargarEmpleados() {
+            const empleados = JSON.parse(localStorage.getItem('empleados')) || [];
+            empleadosTable.innerHTML = ''; // Limpiar la tabla antes de volver a renderizar
+            empleados.forEach((empleado, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${empleado.id}</td>
+                    <td>${empleado.nombre}</td>
+                    <td>${empleado.contraseña}</td>
+                    <td>
+                        <button onclick="editarEmpleado(${index})">Editar</button>
+                        <button onclick="eliminarEmpleado(${index})">Eliminar</button>
+                    </td>
+                `;
+                empleadosTable.appendChild(row);
+            });
+        }
+
+        // Función para agregar o editar un empleado
+        formEmpleado.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const nombre = nombreInput.value;
+            const contraseña = contraseñaInput.value;
+            
+            const empleados = JSON.parse(localStorage.getItem('empleados')) || [];
+
+            if (empleadoEditandoIndex === null) {
+                // Agregar un nuevo empleado
+                const nuevoEmpleado = {
+                    id: empleados.length + 1,
+                    nombre: nombre,
+                    contraseña: contraseña
+                };
+                empleados.push(nuevoEmpleado);
+            } else {
+                // Actualizar el empleado
+                empleados[empleadoEditandoIndex] = {
+                    id: empleados[empleadoEditandoIndex].id,
+                    nombre: nombre,
+                    contraseña: contraseña
+                };
+                empleadoEditandoIndex = null; // Resetear el índice de edición
+            }
+
+            localStorage.setItem('empleados', JSON.stringify(empleados));
+
+            // Limpiar los campos del formulario
+            nombreInput.value = '';
+            contraseñaInput.value = '';
+
+            cargarEmpleados();
+        });
+
+        // Función para editar un empleado
+        function editarEmpleado(index) {
+            const empleados = JSON.parse(localStorage.getItem('empleados')) || [];
+            const empleado = empleados[index];
+            
+            nombreInput.value = empleado.nombre;
+            contraseñaInput.value = empleado.contraseña;
+
+            empleadoEditandoIndex = index; // Guardamos el índice del empleado que estamos editando
+        }
+
+        // Función para eliminar un empleado
+        function eliminarEmpleado(index) {
+            if (confirm('¿Estás seguro de que quieres eliminar este empleado?')) {
+                const empleados = JSON.parse(localStorage.getItem('empleados')) || [];
+                empleados.splice(index, 1);
+                localStorage.setItem('empleados', JSON.stringify(empleados));
+                cargarEmpleados();
+            }
+        }
+
+        // Cargar los empleados cuando la página se carga
+        cargarEmpleados();
+    </script>
+</body>
+</html>

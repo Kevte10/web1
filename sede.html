@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Gestión de Sedes</title>
+    <a href="main.html"><button class="volver-btn" onclick="window.history.back()">Volver</button></a>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="tel"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 250px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Sedes</h1>
+    
+    <!-- Formulario para agregar sede -->
+    <form id="formSede">
+        <h3>Agregar Sede</h3>
+        Nombre: <input type="text" id="nombre" required><br>
+        Dirección: <input type="text" id="direccion" required><br>
+        Teléfono: <input type="tel" id="telefono" required pattern="[0-9]{9}"><br>
+        <input type="submit" value="Agregar">
+    </form>
+    
+    <h3>Sedes Registradas</h3>
+    <table id="sedesTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>ID Sede</th>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos de las sedes se mostrarán aquí -->
+        </tbody>
+    </table>
+
+    <script>
+        // Obtención de elementos
+        const formSede = document.getElementById('formSede');
+        const nombreInput = document.getElementById('nombre');
+        const direccionInput = document.getElementById('direccion');
+        const telefonoInput = document.getElementById('telefono');
+        const sedesTable = document.getElementById('sedesTable').getElementsByTagName('tbody')[0];
+
+        // Variable para saber si estamos editando
+        let sedeEditandoIndex = null;
+
+        // Función para cargar las sedes desde localStorage
+        function cargarSedes() {
+            const sedes = JSON.parse(localStorage.getItem('sedes')) || [];
+            sedesTable.innerHTML = ''; // Limpiar la tabla antes de volver a renderizar
+            sedes.forEach((sede, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${sede.idSedePrimaria}</td>
+                    <td>${sede.nombre}</td>
+                    <td>${sede.direccion}</td>
+                    <td>${sede.telefono}</td>
+                    <td>
+                        <button onclick="editarSede(${index})">Editar</button>
+                        <button onclick="eliminarSede(${index})">Eliminar</button>
+                    </td>
+                `;
+                sedesTable.appendChild(row);
+            });
+        }
+
+        // Función para agregar o editar una sede
+        formSede.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const nombre = nombreInput.value;
+            const direccion = direccionInput.value;
+            const telefono = telefonoInput.value;
+            
+            const sedes = JSON.parse(localStorage.getItem('sedes')) || [];
+
+            if (sedeEditandoIndex === null) {
+                // Agregar una nueva sede
+                const nuevaSede = {
+                    idSedePrimaria: sedes.length + 1,
+                    nombre: nombre,
+                    direccion: direccion,
+                    telefono: telefono
+                };
+                sedes.push(nuevaSede);
+            } else {
+                // Actualizar la sede
+                sedes[sedeEditandoIndex] = {
+                    idSedePrimaria: sedes[sedeEditandoIndex].idSedePrimaria,
+                    nombre: nombre,
+                    direccion: direccion,
+                    telefono: telefono
+                };
+                sedeEditandoIndex = null; // Resetear el índice de edición
+            }
+
+            localStorage.setItem('sedes', JSON.stringify(sedes));
+
+            // Limpiar los campos del formulario
+            nombreInput.value = '';
+            direccionInput.value = '';
+            telefonoInput.value = '';
+
+            cargarSedes();
+        });
+
+        // Función para editar una sede
+        function editarSede(index) {
+            const sedes = JSON.parse(localStorage.getItem('sedes')) || [];
+            const sede = sedes[index];
+            
+            nombreInput.value = sede.nombre;
+            direccionInput.value = sede.direccion;
+            telefonoInput.value = sede.telefono;
+
+            sedeEditandoIndex = index; // Guardamos el índice de la sede que estamos editando
+        }
+
+        // Función para eliminar una sede
+        function eliminarSede(index) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta sede?')) {
+                const sedes = JSON.parse(localStorage.getItem('sedes')) || [];
+                sedes.splice(index, 1);
+                localStorage.setItem('sedes', JSON.stringify(sedes));
+                cargarSedes();
+            }
+        }
+
+        // Cargar las sedes cuando la página se carga
+        cargarSedes();
+    </script>
+</body>
+</html>

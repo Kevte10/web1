@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Gestión de Devoluciones</title>
+    <a href="main.html"><button class="volver-btn" onclick="window.history.back()">Volver</button></a>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="tel"], input[type="date"], input[type="number"], input[type="checkbox"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 250px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Devoluciones</h1>
+    
+    <!-- Formulario para agregar devolución -->
+    <form id="formDevolucion">
+        <h3>Agregar Devolución</h3>
+        ID Devolución: <input type="text" id="idDevolucionPrimaria" required><br>
+        ID Alquiler: <input type="text" id="idAlquiler" required><br>
+        ID Empleado: <input type="text" id="idEmpleado" required><br>
+        Fecha Devolución: <input type="date" id="fechaDevolucion" required><br>
+        ¿Entregado a tiempo? <input type="checkbox" id="entregadoATiempo" checked><br>
+        ¿Con daños? <input type="checkbox" id="daños"><br>
+        Multa: <input type="number" id="multa" required step="0.01" value="0"><br>
+        <input type="submit" value="Agregar">
+    </form>
+    
+    <h3>Devoluciones Registradas</h3>
+    <table id="devolucionesTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>ID Devolución</th>
+                <th>ID Alquiler</th>
+                <th>ID Empleado</th>
+                <th>Fecha Devolución</th>
+                <th>Entregado a Tiempo</th>
+                <th>Con Daños</th>
+                <th>Multa</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos de las devoluciones se mostrarán aquí -->
+        </tbody>
+    </table>
+
+    <script>
+        // Obtención de elementos
+        const formDevolucion = document.getElementById('formDevolucion');
+        const idDevolucionPrimariaInput = document.getElementById('idDevolucionPrimaria');
+        const idAlquilerInput = document.getElementById('idAlquiler');
+        const idEmpleadoInput = document.getElementById('idEmpleado');
+        const fechaDevolucionInput = document.getElementById('fechaDevolucion');
+        const entregadoATiempoInput = document.getElementById('entregadoATiempo');
+        const dañosInput = document.getElementById('daños');
+        const multaInput = document.getElementById('multa');
+        const devolucionesTable = document.getElementById('devolucionesTable').getElementsByTagName('tbody')[0];
+
+        // Variable para saber si estamos editando
+        let devolucionEditandoIndex = null;
+
+        // Función para cargar las devoluciones desde localStorage
+        function cargarDevoluciones() {
+            const devoluciones = JSON.parse(localStorage.getItem('devoluciones')) || [];
+            devolucionesTable.innerHTML = ''; // Limpiar la tabla antes de volver a renderizar
+            devoluciones.forEach((devolucion, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${devolucion.idDevolucionPrimaria}</td>
+                    <td>${devolucion.idAlquiler}</td>
+                    <td>${devolucion.idEmpleado}</td>
+                    <td>${devolucion.fechaDevolucion}</td>
+                    <td>${devolucion.entregadoATiempo ? 'Sí' : 'No'}</td>
+                    <td>${devolucion.daños ? 'Sí' : 'No'}</td>
+                    <td>${devolucion.multa}</td>
+                    <td>
+                        <button onclick="editarDevolucion(${index})">Editar</button>
+                        <button onclick="eliminarDevolucion(${index})">Eliminar</button>
+                    </td>
+                `;
+                devolucionesTable.appendChild(row);
+            });
+        }
+
+        // Función para agregar o editar una devolución
+        formDevolucion.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const idDevolucionPrimaria = idDevolucionPrimariaInput.value;
+            const idAlquiler = idAlquilerInput.value;
+            const idEmpleado = idEmpleadoInput.value;
+            const fechaDevolucion = fechaDevolucionInput.value;
+            const entregadoATiempo = entregadoATiempoInput.checked ? 1 : 0;
+            const daños = dañosInput.checked ? 1 : 0;
+            const multa = parseFloat(multaInput.value);
+            
+            const devoluciones = JSON.parse(localStorage.getItem('devoluciones')) || [];
+
+            if (devolucionEditandoIndex === null) {
+                // Agregar una nueva devolución
+                const nuevaDevolucion = {
+                    idDevolucionPrimaria: idDevolucionPrimaria,
+                    idAlquiler: idAlquiler,
+                    idEmpleado: idEmpleado,
+                    fechaDevolucion: fechaDevolucion,
+                    entregadoATiempo: entregadoATiempo,
+                    daños: daños,
+                    multa: multa
+                };
+                devoluciones.push(nuevaDevolucion);
+            } else {
+                // Actualizar la devolución
+                devoluciones[devolucionEditandoIndex] = {
+                    idDevolucionPrimaria: idDevolucionPrimaria,
+                    idAlquiler: idAlquiler,
+                    idEmpleado: idEmpleado,
+                    fechaDevolucion: fechaDevolucion,
+                    entregadoATiempo: entregadoATiempo,
+                    daños: daños,
+                    multa: multa
+                };
+                devolucionEditandoIndex = null; // Resetear el índice de edición
+            }
+
+            localStorage.setItem('devoluciones', JSON.stringify(devoluciones));
+
+            // Limpiar los campos del formulario
+            idDevolucionPrimariaInput.value = '';
+            idAlquilerInput.value = '';
+            idEmpleadoInput.value = '';
+            fechaDevolucionInput.value = '';
+            entregadoATiempoInput.checked = true;
+            dañosInput.checked = false;
+            multaInput.value = 0;
+
+            cargarDevoluciones();
+        });
+
+        // Función para editar una devolución
+        function editarDevolucion(index) {
+            const devoluciones = JSON.parse(localStorage.getItem('devoluciones')) || [];
+            const devolucion = devoluciones[index];
+            
+            idDevolucionPrimariaInput.value = devolucion.idDevolucionPrimaria;
+            idAlquilerInput.value = devolucion.idAlquiler;
+            idEmpleadoInput.value = devolucion.idEmpleado;
+            fechaDevolucionInput.value = devolucion.fechaDevolucion;
+            entregadoATiempoInput.checked = devolucion.entregadoATiempo === 1;
+            dañosInput.checked = devolucion.daños === 1;
+            multaInput.value = devolucion.multa;
+
+            devolucionEditandoIndex = index; // Guardamos el índice de la devolución que estamos editando
+        }
+
+        // Función para eliminar una devolución
+        function eliminarDevolucion(index) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta devolución?')) {
+                const devoluciones = JSON.parse(localStorage.getItem('devoluciones')) || [];
+                devoluciones.splice(index, 1);
+                localStorage.setItem('devoluciones', JSON.stringify(devoluciones));
+                cargarDevoluciones();
+            }
+        }
+
+        // Cargar las devoluciones cuando la página se carga
+        cargarDevoluciones();
+    </script>
+</body>
+</html>
